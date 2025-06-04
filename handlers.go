@@ -11,8 +11,7 @@ import (
 var (
 	clientID     = "1093697499477113"
 	clientSecret = "991bb5caa3fa46549b2995a6f0f594e2"
-	redirectURI = "https://81cd-180-232-43-67.ngrok-free.app/api/auth/facebook/callback"
-
+	redirectURI = "http://localhost:8080/api/auth/facebook/callback"
 )
 
 type FacebookTokenResponse struct {
