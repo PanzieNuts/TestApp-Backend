@@ -27,6 +27,14 @@ type FacebookUser struct {
 }
 
 func FacebookLoginHandler(w http.ResponseWriter, r *http.Request) {
+	enableCORS(w)
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	
+	
 	fbURL := fmt.Sprintf(
 		"https://www.facebook.com/v19.0/dialog/oauth?client_id=%s&redirect_uri=%s&scope=email",
 		clientID, url.QueryEscape(redirectURI),
@@ -35,6 +43,14 @@ func FacebookLoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func FacebookCallbackHandler(w http.ResponseWriter, r *http.Request) {
+	enableCORS(w)
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	
+	
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		http.Error(w, "Missing code in callback", http.StatusBadRequest)
@@ -109,4 +125,42 @@ func FacebookCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	http.Redirect(w, r, "http://localhost:3000/home?login=facebook", http.StatusSeeOther)
+}
+
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	enableCORS(w)
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// Clear the cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   -1, // Delete cookie
+	})
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Logged out"))
+}
+
+func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("session_token")
+		if err != nil || cookie.Value == "" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		token, err := ValidateJWT(cookie.Value)
+		if err != nil || !token.Valid {
+			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	}
 }
