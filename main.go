@@ -2,8 +2,21 @@ package main
 
 import (
 	"log"
+	"os"
 	"net/http"
+	"github.com/joho/godotenv" 
 )
+
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	clientID = os.Getenv("CLIENT_ID")
+	clientSecret = os.Getenv("CLIENT_SECRET")
+	redirectURI = os.Getenv("REDIRECT_URI")
+}
 
 
 func main() {
