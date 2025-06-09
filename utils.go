@@ -14,25 +14,26 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func GenerateJWT(userID int) (string, error) {
+func GenerateJWT(userID int) (string, time.Time, error) {
+	expiresAt := time.Now().Add(1 * time.Minute)
 	claims := &Claims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "your-app",
+			Issuer:    "TestApp",
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtKey)
+	tokenStr, err := token.SignedString(jwtKey)
+	return tokenStr, expiresAt, err
 }
 
 func ValidateJWT(tokenStr string) (*jwt.Token, *Claims, error) {
 	claims := &Claims{}
 
 	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
-		// Reject tokens signed with "none"
 		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 			return nil, errors.New("unexpected signing method")
 		}
