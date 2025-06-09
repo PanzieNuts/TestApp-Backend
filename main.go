@@ -2,9 +2,15 @@ package main
 
 import (
 	"log"
-	"os"
 	"net/http"
-	"github.com/joho/godotenv" 
+	"os"
+	"github.com/joho/godotenv"
+)
+
+var (
+	clientID     string
+	clientSecret string
+	redirectURI  string
 )
 
 func init() {
@@ -16,8 +22,9 @@ func init() {
 	clientID = os.Getenv("CLIENT_ID")
 	clientSecret = os.Getenv("CLIENT_SECRET")
 	redirectURI = os.Getenv("REDIRECT_URI")
-}
 
+	log.Println("Environment variables loaded")
+}
 
 func main() {
 	InitDB()
@@ -26,15 +33,14 @@ func main() {
 	http.HandleFunc("/api/auth/facebook/callback", FacebookCallbackHandler)
 	http.HandleFunc("/api/logout", LogoutHandler)
 
-	// Example protected route
-	http.HandleFunc("/api/protected", AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("You are authenticated"))
-	}))
+	http.HandleFunc("/api/protected", withCORS(AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
+    w.Write([]byte("You are authenticated"))
+})))
+
 
 	log.Println("Server running at :8080")
-	http.ListenAndServe(":8080", nil)
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
-
 
 func enableCORS(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
@@ -42,5 +48,3 @@ func enableCORS(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 }
-
-
