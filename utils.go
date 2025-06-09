@@ -15,20 +15,32 @@ type Claims struct {
 }
 
 func GenerateJWT(userID int) (string, time.Time, error) {
-	expiresAt := time.Now().Add(1 * time.Minute)
-	claims := &Claims{
-		UserID: userID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expiresAt),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "TestApp",
-		},
-	}
+    // Load Manila timezone
+    loc, err := time.LoadLocation("Asia/Manila")
+    if err != nil {
+        loc = time.UTC // fallback to UTC if error
+    }
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString(jwtKey)
-	return tokenStr, expiresAt, err
+    // Current time in Manila timezone
+    now := time.Now().In(loc)
+
+    // Set expiration 1 minute from now (Manila time)
+    expiresAt := now.Add(1 * time.Minute)
+
+    claims := &Claims{
+        UserID: userID,
+        RegisteredClaims: jwt.RegisteredClaims{
+            ExpiresAt: jwt.NewNumericDate(expiresAt),
+            IssuedAt:  jwt.NewNumericDate(now),
+            Issuer:    "TestApp",
+        },
+    }
+
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    tokenStr, err := token.SignedString(jwtKey)
+    return tokenStr, expiresAt, err
 }
+
 
 func ValidateJWT(tokenStr string) (*jwt.Token, *Claims, error) {
 	claims := &Claims{}
